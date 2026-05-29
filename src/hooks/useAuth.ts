@@ -92,7 +92,7 @@ function useAuthState() {
       return false;
     }
 
-    toast.success('Akun berhasil dibuat! Silakan masuk.', { id: toastId });
+    toast.success('Pendaftaran berhasil! Silakan periksa email Anda.', { id: toastId });
     return true;
   };
 
