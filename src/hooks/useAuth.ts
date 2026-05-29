@@ -84,7 +84,9 @@ function useAuthState() {
   const signUp = async (email: string, password: string, nama: string) => {
     setLoading(true);
     const toastId = toast.loading('Membuat akun...');
-    const result = await authService.signUp(supabase, email, password, nama);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const redirectTo = `${origin}/auth/callback`;
+    const result = await authService.signUp(supabase, email, password, nama, redirectTo);
     setLoading(false);
 
     if (result.error) {

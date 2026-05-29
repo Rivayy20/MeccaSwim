@@ -35,7 +35,8 @@ export async function signUp(
   supabase: SupabaseClient,
   email: string,
   password: string,
-  nama: string
+  nama: string,
+  redirectTo?: string
 ): Promise<ServiceResult<{ user: User | null; profile: Profile | null }>> {
   try {
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -45,6 +46,7 @@ export async function signUp(
         data: {
           nama,
         },
+        emailRedirectTo: redirectTo,
       },
     });
 
