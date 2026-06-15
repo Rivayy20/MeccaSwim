@@ -13,6 +13,7 @@ export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCooldown, setIsCooldown] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', content: 'Halo Kak! 👋 Aku MeccaBot, asisten virtual dari Mecca Swim. Ada yang bisa aku bantu untuk mempermudah presensi kelas renang Kakak hari ini?' }
   ]);
@@ -37,6 +38,12 @@ export default function ChatWidget() {
     setInput('');
     setMessages((prev) => [...prev, { role: 'user', content: userMsg }]);
     setIsLoading(true);
+    setIsCooldown(true);
+
+    // Cooldown 3 detik untuk mencegah 429 TooManyRequests
+    setTimeout(() => {
+      setIsCooldown(false);
+    }, 3000);
 
     try {
       const res = await fetch('/api/chat', {
@@ -53,10 +60,11 @@ export default function ChatWidget() {
 
       setMessages((prev) => [...prev, { role: 'model', content: data.reply }]);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan tidak dikenal';
+      console.error('ChatWidget error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi gangguan jaringan sementara.';
       setMessages((prev) => [
         ...prev,
-        { role: 'model', content: `Waduh, koneksiku terputus nih Kak 😅: ${errorMessage}` }
+        { role: 'model', content: errorMessage }
       ]);
     } finally {
       setIsLoading(false);
@@ -126,12 +134,13 @@ export default function ChatWidget() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Tanya MeccaBot..."
-                className="flex-1 bg-slate-100 dark:bg-black/50 text-slate-900 dark:text-white rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder={isCooldown ? "Tunggu sebentar..." : "Tanya MeccaBot..."}
+                disabled={isLoading || isCooldown}
+                className="flex-1 bg-slate-100 dark:bg-black/50 text-slate-900 dark:text-white rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-70 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || isCooldown || !input.trim()}
                 className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="h-4 w-4 -ml-0.5" />

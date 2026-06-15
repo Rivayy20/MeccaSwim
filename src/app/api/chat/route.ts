@@ -29,8 +29,9 @@ Fitur Utama:
 
 Jika ada pertanyaan seputar pendaftaran, persilakan untuk klik tombol "Mulai Gratis" di website.`;
 
+    const modelName = 'gemini-2.5-flash';
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -51,10 +52,14 @@ Jika ada pertanyaan seputar pendaftaran, persilakan untuk klik tombol "Mulai Gra
     );
 
     const data = await response.json();
+    
+    console.log("Gemini Model:", modelName);
+    console.log("Gemini Status:", response.status);
 
     if (!response.ok) {
+      console.error('Gemini API Integration Error:', data.error || 'Unknown error');
       return NextResponse.json(
-        { error: data.error?.message || 'Gagal dari Gemini API' },
+        { error: 'AI Assistant sedang sibuk saat ini. Silakan coba kembali beberapa saat lagi.' },
         { status: response.status }
       );
     }
