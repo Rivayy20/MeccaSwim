@@ -1,6 +1,8 @@
 'use client';
 
-import { Bell } from 'lucide-react';
+import { Bell, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 interface HeaderProps {
   title: string;
@@ -18,6 +20,12 @@ export function Header({
   onNotificationClick,
 }: HeaderProps) {
   const initial = userName.charAt(0).toUpperCase();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 w-full h-14 sm:h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6">
@@ -28,6 +36,17 @@ export function Header({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
+        {/* Theme Toggle */}
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus:outline-none active:scale-95"
+            title="Ganti Tema"
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+        )}
+
         {/* Notification Bell */}
         <button
           onClick={onNotificationClick}

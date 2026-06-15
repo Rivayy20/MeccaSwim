@@ -150,7 +150,7 @@ export default function ClassDetailPage() {
                 Kapasitas: {classObj.kapasitas} Murid
               </span>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 leading-tight">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
               {classObj.nama}
             </h2>
             <p className="text-sm text-slate-500 font-semibold flex items-center gap-1.5">
@@ -180,7 +180,7 @@ export default function ClassDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Student List in Class (2 cols equivalent on large) */}
         <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Users className="h-4 w-4 text-primary-500" />
             Daftar Murid Terdaftar ({students.length})
           </h3>
@@ -234,7 +234,7 @@ export default function ClassDetailPage() {
 
         {/* Right Column: Session History */}
         <div className="lg:col-span-1 space-y-4">
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary-500" />
             Riwayat Sesi Kelas
           </h3>
@@ -251,7 +251,7 @@ export default function ClassDetailPage() {
                 <Link href={`/dashboard/sesi/${sess.id}`} key={sess.id} className="block">
                   <Card hover className="border border-border p-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                         {formatHariTanggal(sess.tanggal)}
                       </span>
                       <Badge variant={sess.status === 'active' ? 'hadir' : 'secondary'}>

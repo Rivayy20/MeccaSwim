@@ -426,7 +426,7 @@ export default function ActiveSessionPage() {
                 {formatHariTanggal(session.tanggal)}
               </span>
             </div>
-            <h2 className="text-xl font-black text-slate-900 leading-tight">
+            <h2 className="text-xl font-black text-slate-900 dark:text-white leading-tight">
               {session.classes?.nama || 'Kelas Renang'}
             </h2>
             <div className="flex flex-col sm:flex-row sm:items-center gap-x-3 gap-y-1">
@@ -462,7 +462,7 @@ export default function ActiveSessionPage() {
         <div className="lg:col-span-5 flex flex-col gap-6">
           {!isSessionClosed ? (
             <Card className="border border-border flex flex-col items-center justify-center p-4 sm:p-6 text-center">
-              <h3 className="font-bold text-slate-900 text-sm mb-4">Tunjukkan QR Code ini ke Orang Tua</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-4">Tunjukkan QR Code ini ke Orang Tua</h3>
 
               {isExpired ? (
                 <div className="h-[min(250px,70vw)] w-[min(250px,70vw)] bg-slate-100 dark:bg-slate-800 border border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-3 p-4">
@@ -513,7 +513,7 @@ export default function ActiveSessionPage() {
               <div className="p-3 bg-emerald-50 text-emerald-500 rounded-full">
                 <Check className="h-8 w-8" />
               </div>
-              <h3 className="font-extrabold text-slate-900 text-base">Sesi Absensi Selesai</h3>
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-base">Sesi Absensi Selesai</h3>
               <p className="text-xs text-muted-foreground font-semibold leading-relaxed max-w-[250px]">
                 Sesi presensi untuk kelas ini telah ditutup oleh Anda. Riwayat presensi tersimpan permanen di basis data.
               </p>

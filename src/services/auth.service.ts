@@ -113,3 +113,32 @@ export async function updateProfile(
     return { data: null, error: 'Gagal memperbarui profil' };
   }
 }
+
+export async function resetPassword(
+  supabase: SupabaseClient,
+  email: string,
+  redirectTo?: string
+): Promise<ServiceResult<null>> {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+    if (error) return { data: null, error: error.message };
+    return { data: null, error: null };
+  } catch {
+    return { data: null, error: 'Terjadi kesalahan saat meminta reset password' };
+  }
+}
+
+export async function updatePassword(
+  supabase: SupabaseClient,
+  password: string
+): Promise<ServiceResult<null>> {
+  try {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) return { data: null, error: error.message };
+    return { data: null, error: null };
+  } catch {
+    return { data: null, error: 'Terjadi kesalahan saat memperbarui password' };
+  }
+}

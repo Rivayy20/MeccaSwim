@@ -167,10 +167,11 @@ export default function ParentPortalPage() {
       {/* Public Header */}
       <header className="w-full gradient-primary text-white py-6 shadow-md">
         <div className="max-w-4xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-2 select-none">
-            <span className="text-3xl" role="img" aria-label="wave">
-              🏊
-            </span>
+          <div className="flex items-center gap-3 select-none">
+            <div className="relative h-10 w-10 flex-shrink-0 rounded-full overflow-hidden shadow-sm border border-white/20 bg-white/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/logo.png" alt="Logo" className="w-full h-full object-cover" />
+            </div>
             <span className="font-extrabold text-xl tracking-wider">
               Mecca Swim
             </span>

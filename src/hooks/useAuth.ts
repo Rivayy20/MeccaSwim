@@ -128,6 +128,38 @@ function useAuthState() {
     return true;
   };
 
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    const toastId = toast.loading('Mengirim email reset password...');
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const redirectTo = `${origin}/auth/callback?next=/update-password`;
+    const result = await authService.resetPassword(supabase, email, redirectTo);
+    setLoading(false);
+
+    if (result.error) {
+      toast.error(result.error, { id: toastId });
+      return false;
+    }
+
+    toast.success('Email reset password berhasil dikirim!', { id: toastId });
+    return true;
+  };
+
+  const updatePassword = async (password: string) => {
+    setLoading(true);
+    const toastId = toast.loading('Memperbarui password...');
+    const result = await authService.updatePassword(supabase, password);
+    setLoading(false);
+
+    if (result.error) {
+      toast.error(result.error, { id: toastId });
+      return false;
+    }
+
+    toast.success('Password berhasil diperbarui!', { id: toastId });
+    return true;
+  };
+
   return {
     user,
     profile,
@@ -136,6 +168,8 @@ function useAuthState() {
     signUp,
     signOut,
     updateProfile,
+    resetPassword,
+    updatePassword,
   };
 }
 
