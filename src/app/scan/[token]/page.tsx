@@ -25,17 +25,18 @@ export default function QRScanConfirmationPage() {
   
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<SessionWithClass | null>(null);
-  const [students, setStudents] = useState<Pick<Student, 'id' | 'nama'>[]>([]);
+  const [students, setStudents] = useState<Pick<Student, 'id' | 'nama' | 'link_token'>[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Selection states
-  const [selectedStudent, setSelectedStudent] = useState<Pick<Student, 'id' | 'nama'> | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Pick<Student, 'id' | 'nama' | 'link_token'> | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   
   // Success state
   const [isSuccess, setIsSuccess] = useState(false);
   const [successStudentName, setSuccessStudentName] = useState('');
+  const [successLinkToken, setSuccessLinkToken] = useState<string | null>(null);
 
   const loadSessionAndStudents = React.useCallback(async () => {
     if (!qrToken) return;
@@ -83,7 +84,7 @@ export default function QRScanConfirmationPage() {
     }
   }, [qrToken, loadSessionAndStudents]);
 
-  const handleSelectStudent = (student: Pick<Student, 'id' | 'nama'>) => {
+  const handleSelectStudent = (student: Pick<Student, 'id' | 'nama' | 'link_token'>) => {
     setSelectedStudent(student);
     setIsConfirmOpen(true);
   };
@@ -109,6 +110,7 @@ export default function QRScanConfirmationPage() {
       } else {
         toast.success('Konfirmasi presensi berhasil!');
         setSuccessStudentName(selectedStudent.nama);
+        setSuccessLinkToken(result.data?.student?.link_token || selectedStudent.link_token || null);
         setIsSuccess(true);
         setIsConfirmOpen(false);
       }
@@ -149,6 +151,7 @@ export default function QRScanConfirmationPage() {
 
   // Success State Layout
   if (isSuccess) {
+    const portalUrl = successLinkToken ? `/murid/${successLinkToken}` : '/';
     return (
       <div className="min-h-screen bg-slate-900 water-pattern flex items-center justify-center p-4">
         <Card variant="glass" className="w-full max-w-md border-white/10 text-center bg-slate-900/60 p-6 space-y-4 animate-scale-in">
@@ -165,11 +168,22 @@ export default function QRScanConfirmationPage() {
             </p>
           </div>
           <p className="text-xs text-slate-300 font-medium leading-relaxed">
-            Kehadiran telah berhasil terekam secara real-time di sistem. Orang tua akan menerima notifikasi laporan.
+            Kehadiran telah berhasil terekam secara real-time di sistem. Anda dapat langsung melihat riwayat kehadiran, progres latihan, dan pengajuan izin di Dashboard Orang Tua.
           </p>
-          <Button onClick={() => router.push('/')} variant="outline" className="w-full mt-4">
-            Kembali ke Beranda
-          </Button>
+          <div className="space-y-2 pt-2">
+            <Button onClick={() => router.push(portalUrl)} className="w-full font-bold">
+              {successLinkToken ? 'Buka Dashboard Orang Tua' : 'Kembali ke Beranda'}
+            </Button>
+            {successLinkToken && (
+              <button
+                type="button"
+                onClick={() => router.push('/')}
+                className="text-xs text-slate-400 hover:text-white transition-colors block w-full py-2 font-semibold"
+              >
+                Kembali ke Beranda Utama
+              </button>
+            )}
+          </div>
         </Card>
       </div>
     );

@@ -26,14 +26,22 @@ function ContactForm() {
     setError('');
 
     const formData = new FormData(e.currentTarget);
-    formData.append('access_key', process.env.NEXT_PUBLIC_WEB3FORMS_KEY || '');
-    formData.append('subject', isAcademy ? 'Pengajuan Konsultasi Paket Academy' : 'Pesan Baru dari Halaman Kontak Mecca Swim');
-    formData.append('from_name', 'Form Kontak Mecca Swim');
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const message = formData.get('message') as string;
 
     try {
-      const response = await fetch('https://api.web3forms.com/submit', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          message,
+          subject: isAcademy ? 'Pengajuan Konsultasi Paket Academy' : 'Pesan Baru dari Halaman Kontak Mecca Swim',
+        }),
       });
 
       const data = await response.json();

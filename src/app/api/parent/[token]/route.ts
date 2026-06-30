@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getAttendancesByStudent } from '@/services/attendance.service';
 import { getStudentByLinkToken } from '@/services/student.service';
 import { submitPermit } from '@/services/permit.service';
@@ -17,7 +17,7 @@ export async function GET(
     return NextResponse.json({ error: 'Periode tidak valid.' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const studentResult = await getStudentByLinkToken(supabase, params.token);
 
   if (studentResult.error || !studentResult.data) {
@@ -67,7 +67,12 @@ export async function POST(
       return NextResponse.json({ error: 'Status izin tidak valid.' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const cleanKeterangan = typeof keterangan === 'string' ? keterangan.trim() : '';
+    if (cleanKeterangan.length > 500) {
+      return NextResponse.json({ error: 'Keterangan terlalu panjang (maksimal 500 karakter).' }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
     const studentResult = await getStudentByLinkToken(supabase, params.token);
 
     if (studentResult.error || !studentResult.data) {
@@ -76,7 +81,7 @@ export async function POST(
 
     const permitResult = await submitPermit(supabase, studentResult.data.id, {
       status: status as 'izin' | 'sakit',
-      keterangan: keterangan || '',
+      keterangan: cleanKeterangan,
     });
 
     if (permitResult.error) {

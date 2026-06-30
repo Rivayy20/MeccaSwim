@@ -119,6 +119,12 @@ CREATE POLICY "Guru bisa kelola kelas sendiri"
   ON classes FOR ALL
   USING (auth.uid() = guru_id);
 
+-- Publik: baca semua kelas (dibutuhkan untuk validasi QR scan & portal orang tua)
+DROP POLICY IF EXISTS "Publik bisa lihat data kelas" ON classes;
+CREATE POLICY "Publik bisa lihat data kelas"
+  ON classes FOR SELECT
+  USING (true);
+
 -- 11. RLS Policies: students
 -- ============================================================
 -- Guru: full CRUD pada murid miliknya
@@ -181,17 +187,10 @@ CREATE POLICY "Guru bisa kelola attendance"
     )
   );
 
--- Publik: bisa insert attendance (QR scan dari orang tua)
+-- Publik: Ditutup dari akses langsung PostgREST karena pemindaian QR dan Portal Orang Tua
+-- kini dialirkan secara aman melalui Next.js Server API Routes (/api/attendance/confirm & /api/parent/[token])
 DROP POLICY IF EXISTS "Publik bisa insert attendance via QR" ON attendances;
-CREATE POLICY "Publik bisa insert attendance via QR"
-  ON attendances FOR INSERT
-  WITH CHECK (true);
-
--- Publik: bisa lihat attendance (portal orang tua)
 DROP POLICY IF EXISTS "Publik bisa lihat attendance" ON attendances;
-CREATE POLICY "Publik bisa lihat attendance"
-  ON attendances FOR SELECT
-  USING (true);
 
 -- 14. Trigger: Auto-create profile saat user signup
 -- ============================================================
@@ -209,6 +208,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Kunci keamanan: cabut hak eksekusi publik dari fungsi SECURITY DEFINER
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM anon, authenticated;
 
 -- Drop trigger jika sudah ada, lalu buat ulang
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -250,11 +253,10 @@ CREATE POLICY "Guru bisa kelola permits muridnya" ON permits FOR ALL USING (
   EXISTS (SELECT 1 FROM students s WHERE s.id = permits.student_id AND s.guru_id = auth.uid())
 );
 
+-- Publik: Ditutup dari akses langsung PostgREST karena pengajuan izin dan riwayat izin
+-- kini dialirkan secara aman melalui Next.js Server API Route (/api/parent/[token])
 DROP POLICY IF EXISTS "Publik bisa buat permit" ON permits;
-CREATE POLICY "Publik bisa buat permit" ON permits FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Publik bisa lihat permit miliknya" ON permits;
-CREATE POLICY "Publik bisa lihat permit miliknya" ON permits FOR SELECT USING (true);
 
 
 -- 17. Tabel Baru: spp_payments (Pembayaran SPP murid)

@@ -14,6 +14,7 @@ export interface QRAttendanceResult extends Attendance {
     nama: string;
     ortu_hp: string | null;
     class_name: string;
+    link_token: string;
   };
 }
 
@@ -148,7 +149,7 @@ export async function confirmQRAttendance(
 
     const { data: student } = await supabase
       .from('students')
-      .select('id, nama, ortu_hp, classes(nama)')
+      .select('id, nama, ortu_hp, link_token, classes(nama)')
       .eq('id', studentId)
       .eq('kelas_id', session.kelas_id)
       .maybeSingle();
@@ -176,7 +177,7 @@ export async function confirmQRAttendance(
       return { data: null, error: insertError.message };
     }
 
-    const studentData = student as unknown as { nama: string; ortu_hp: string | null; classes: { nama: string } | null };
+    const studentData = student as unknown as { nama: string; ortu_hp: string | null; link_token: string; classes: { nama: string } | null };
     return {
       data: {
         ...(attendance as Attendance),
@@ -184,6 +185,7 @@ export async function confirmQRAttendance(
           nama: studentData.nama,
           ortu_hp: studentData.ortu_hp,
           class_name: studentData.classes?.nama || 'Kelas Renang',
+          link_token: studentData.link_token,
         },
       },
       error: null,

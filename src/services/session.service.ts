@@ -84,7 +84,7 @@ export async function getScanSessionData(
   try {
     const { data, error } = await supabase
       .from('sessions')
-      .select(`${SESSION_FIELDS}, classes(${CLASS_FIELDS}, students(id, nama))`)
+      .select(`${SESSION_FIELDS}, classes(${CLASS_FIELDS}, students(id, nama, link_token))`)
       .eq('qr_token', qrToken)
       .single();
 
@@ -94,12 +94,13 @@ export async function getScanSessionData(
     return {
       data: {
         ...sessionData,
-        students: sessionData.classes.students || [],
+        students: sessionData.classes?.students || [],
       },
       error: null,
     };
-  } catch {
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga' };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak terduga';
+    return { data: null, error: errorMsg };
   }
 }
 

@@ -2,7 +2,17 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { message } = await req.json();
+    const body = await req.json();
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
+
+    if (!message) {
+      return NextResponse.json({ error: 'Pesan tidak boleh kosong.' }, { status: 400 });
+    }
+
+    if (message.length > 500) {
+      return NextResponse.json({ error: 'Pertanyaan terlalu panjang. Maksimal 500 karakter.' }, { status: 400 });
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {

@@ -19,6 +19,11 @@ export const metadata: Metadata = {
     'Sistem presensi digital untuk les renang. Kelola kehadiran murid dengan mudah menggunakan QR Code.',
   keywords: ['presensi', 'les renang', 'kehadiran', 'QR code', 'mecca swim'],
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icons/logo.png',
+    shortcut: '/icons/logo.png',
+    apple: '/icons/logo.png',
+  },
 };
 
 export default function RootLayout({

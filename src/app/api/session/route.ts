@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import * as sessionService from '@/services/session.service';
 
 // GET: Fetch session by QR token (public) or all sessions (requires auth)
@@ -9,14 +10,15 @@ export async function GET(request: Request) {
     const qrToken = searchParams.get('qr_token');
     const sessionId = searchParams.get('session_id');
 
-    const supabase = createClient();
-
-    // Public QR token validation
+    // Public QR token validation menggunakan Admin Client agar tidak bergantung RLS publik
     if (qrToken) {
-      const result = await sessionService.getScanSessionData(supabase, qrToken);
+      const adminSupabase = createAdminClient();
+      const result = await sessionService.getScanSessionData(adminSupabase, qrToken);
       if (result.error) return NextResponse.json({ error: result.error }, { status: 400 });
       return NextResponse.json(result.data);
     }
+
+    const supabase = createClient();
 
     // Auth required from here on
     const { data: { user }, error: authError } = await supabase.auth.getUser();

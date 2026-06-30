@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import * as attendanceService from '@/services/attendance.service';
 
 export async function POST(request: Request) {
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = createAdminClient();
 
     // 1. Confirm QR Attendance
     const result = await attendanceService.confirmQRAttendance(supabase, qr_token, student_id);

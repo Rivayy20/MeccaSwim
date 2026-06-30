@@ -75,7 +75,7 @@ export interface SessionWithClass extends Session {
 }
 
 export interface ScanSessionData extends SessionWithClass {
-  students: Pick<Student, 'id' | 'nama'>[];
+  students: Pick<Student, 'id' | 'nama' | 'link_token'>[];
 }
 
 export interface SessionWithDetails extends Session {
