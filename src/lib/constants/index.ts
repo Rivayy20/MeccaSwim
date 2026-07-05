@@ -71,6 +71,7 @@ export const STATUS_CONFIG = {
 export const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
   { label: 'Murid', href: '/dashboard/murid', icon: 'Users' },
+  { label: 'Registrasi', href: '/dashboard/registrasi', icon: 'UserPlus' },
   { label: 'Kelas', href: '/dashboard/kelas', icon: 'GraduationCap' },
   { label: 'Sesi', href: '/dashboard/sesi', icon: 'QrCode' },
   { label: 'SPP', href: '/dashboard/spp', icon: 'CreditCard' },

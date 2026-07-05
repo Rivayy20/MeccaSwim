@@ -23,4 +23,6 @@ export type {
   UpdateAttendanceInput,
   DashboardStats,
   ServiceResult,
+  StudentRegistration,
+  CreateRegistrationInput,
 } from './database';

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { NAV_ITEMS } from '@/lib/constants';
-import { BarChart3, GraduationCap, LayoutDashboard, QrCode, Users, CreditCard } from 'lucide-react';
+import { BarChart3, GraduationCap, LayoutDashboard, QrCode, Users, CreditCard, UserPlus } from 'lucide-react';
 
 const NAV_ICONS = {
   LayoutDashboard,
@@ -14,6 +14,7 @@ const NAV_ICONS = {
   QrCode,
   CreditCard,
   BarChart3,
+  UserPlus,
 } as const;
 
 export function MobileNav() {
@@ -23,7 +24,7 @@ export function MobileNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 h-[calc(4rem+env(safe-area-inset-bottom))] bg-background/95 backdrop-blur-md border-t border-border lg:hidden flex justify-around items-start pt-1.5 px-1 pb-[env(safe-area-inset-bottom)] shadow-lg">
       {NAV_ITEMS.map((item) => {
-        const Icon = NAV_ICONS[item.icon];
+        const Icon = NAV_ICONS[item.icon as keyof typeof NAV_ICONS];
         
         // Rewrite href if in demo mode
         const targetHref = isDemo 

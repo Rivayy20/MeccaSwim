@@ -6,5 +6,4 @@ export * as attendanceService from './attendance.service';
 export * as notificationService from './notification.service';
 export * as permitService from './permit.service';
 export * as sppService from './spp.service';
-
-
+export * as registrationService from './registration.service';

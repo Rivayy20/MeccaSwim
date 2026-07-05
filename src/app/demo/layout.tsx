@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sidebar, Header, MobileNav } from '@/components/layout';
+import { Sidebar, Header } from '@/components/layout';
 import { Modal, Button } from '@/components/ui';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -28,6 +28,7 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const getPageTitle = () => {
     if (pathname === '/demo/dashboard') return 'Dashboard Utama (Demo)';
@@ -53,16 +54,18 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
 
       <div className="min-h-[calc(100vh-40px)] flex bg-background text-foreground overflow-hidden">
         {/* Sidebar no longer wrapped globally so flexbox doesn't break */}
-        <Sidebar />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 relative pb-16 lg:pb-0">
+        <div className="flex-1 flex flex-col min-w-0 relative">
           <Header
             title={getPageTitle()}
             userName="Instruktur Demo"
             notificationCount={1}
             onNotificationClick={() => setIsNotificationModalOpen(true)}
             onProfileClick={() => setIsProfileModalOpen(true)}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           />
 
           {/* Content Body */}
@@ -71,8 +74,6 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
               {children}
             </DemoAlertWrapper>
           </main>
-
-          <MobileNav />
         </div>
       </div>
 

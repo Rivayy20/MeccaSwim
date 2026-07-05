@@ -40,6 +40,21 @@ export interface Student {
   created_at: string;
 }
 
+export interface StudentRegistration {
+  id: string;
+  nama: string;
+  usia: number | null;
+  jenis_kelamin: 'Laki-laki' | 'Perempuan' | null;
+  lokasi: 'Kolam Fatima Utama' | 'Tirta Sambara' | 'Tirta Rahayu' | 'Semilir';
+  ortu_nama: string;
+  ortu_hp: string;
+  status: 'pending' | 'confirmed' | 'rejected';
+  assigned_class_id: string | null;
+  student_id: string | null;
+  guru_id: string;
+  created_at: string;
+}
+
 export interface Session {
   id: string;
   kelas_id: string;
@@ -103,6 +118,22 @@ export interface CreateStudentInput {
 }
 
 export type UpdateStudentInput = Partial<CreateStudentInput>;
+
+export interface CreateRegistrationInput {
+  nama: string;
+  usia?: number | null;
+  jenis_kelamin?: 'Laki-laki' | 'Perempuan' | null;
+  lokasi: 'Kolam Fatima Utama' | 'Tirta Sambara' | 'Tirta Rahayu' | 'Semilir';
+  ortu_nama: string;
+  ortu_hp: string;
+  guru_id: string;
+}
+
+export type UpdateRegistrationInput = Partial<CreateRegistrationInput> & {
+  status?: 'pending' | 'confirmed' | 'rejected';
+  assigned_class_id?: string | null;
+  student_id?: string | null;
+};
 
 export interface CreateClassInput {
   nama: string;

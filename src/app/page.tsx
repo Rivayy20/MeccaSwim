@@ -204,6 +204,12 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
             <Link
+              href="/register"
+              className="inline-flex items-center justify-center font-bold text-sm h-10 px-5 rounded-full border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+            >
+              Daftar Instruktur
+            </Link>
+            <Link
               href="/login"
               className="inline-flex items-center justify-center font-bold text-sm h-10 px-6 rounded-full bg-foreground text-background shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all"
             >
@@ -314,9 +320,16 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="mt-auto p-6"
+                className="mt-auto p-6 flex flex-col gap-3"
               >
-                <p className="text-center text-sm text-muted-foreground font-medium mb-4">Siap beralih ke presensi modern?</p>
+                <p className="text-center text-sm text-muted-foreground font-medium mb-1">Siap beralih ke presensi modern?</p>
+                <Link
+                  href="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center font-bold h-12 w-full rounded-2xl border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all text-base"
+                >
+                  Daftar Instruktur
+                </Link>
                 <Link
                   href="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -359,11 +372,10 @@ export default function LandingPage() {
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
               <Link
                 href="/register"
-                className="group relative inline-flex items-center justify-center font-bold text-base h-14 px-8 rounded-full bg-foreground text-background shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:scale-105 transition-transform w-full sm:w-auto overflow-hidden"
+                className="group relative inline-flex items-center justify-center font-bold text-base h-14 px-8 rounded-full bg-gradient-to-r from-primary to-blue-500 text-primary-foreground shadow-glow-cyan hover:scale-105 transition-transform w-full sm:w-auto"
               >
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="relative z-10">Mulai Gratis</span>
-                <ArrowRight className="relative z-10 ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <span>Daftar Instruktur</span>
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
                 href="/demo/dashboard"
