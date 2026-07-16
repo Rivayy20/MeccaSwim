@@ -16,7 +16,7 @@ export async function createRegistration(
   data: CreateRegistrationInput
 ): Promise<ServiceResult<StudentRegistration>> {
   try {
-    const { data: registration, error } = await supabase
+    const { error } = await supabase
       .from('student_registrations')
       .insert({
         nama: data.nama,
@@ -27,12 +27,26 @@ export async function createRegistration(
         ortu_hp: data.ortu_hp,
         guru_id: data.guru_id,
         status: 'pending',
-      })
-      .select()
-      .single();
+      });
 
     if (error) return { data: null, error: error.message };
-    return { data: registration as StudentRegistration, error: null };
+
+    const newReg: StudentRegistration = {
+      id: '', // Di-generate oleh database
+      nama: data.nama,
+      usia: data.usia || null,
+      jenis_kelamin: data.jenis_kelamin || null,
+      lokasi: data.lokasi,
+      ortu_nama: data.ortu_nama,
+      ortu_hp: data.ortu_hp,
+      guru_id: data.guru_id,
+      status: 'pending',
+      assigned_class_id: null,
+      student_id: null,
+      created_at: new Date().toISOString(),
+    };
+
+    return { data: newReg, error: null };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat mengirim pendaftaran';
     return { data: null, error: errorMsg };

@@ -31,30 +31,41 @@ CREATE INDEX IF NOT EXISTS idx_student_registrations_created_at ON student_regis
 -- ============================================================
 ALTER TABLE student_registrations ENABLE ROW LEVEL SECURITY;
 
--- 4. RLS Policies: student_registrations
+-- 4. RLS Policies: student_registrations & profiles
 -- ============================================================
--- Publik: Bisa melakukan insert pendaftaran (tanpa login)
+-- Publik: Bisa melihat profil guru (PENTING untuk membuka form pendaftaran di mobile/tanpa login)
+DROP POLICY IF EXISTS "Publik bisa lihat profil guru" ON profiles;
+CREATE POLICY "Publik bisa lihat profil guru"
+  ON profiles FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+-- Publik & User Login: Bisa melakukan insert pendaftaran (tanpa login maupun saat login)
 DROP POLICY IF EXISTS "Publik bisa insert pendaftaran" ON student_registrations;
 CREATE POLICY "Publik bisa insert pendaftaran"
   ON student_registrations FOR INSERT
+  TO anon, authenticated
   WITH CHECK (true);
 
 -- Guru: Hanya bisa lihat pendaftaran yang ditujukan kepadanya (guru_id = auth.uid())
 DROP POLICY IF EXISTS "Guru bisa lihat pendaftaran miliknya" ON student_registrations;
 CREATE POLICY "Guru bisa lihat pendaftaran miliknya"
   ON student_registrations FOR SELECT
+  TO authenticated
   USING (auth.uid() = guru_id);
 
 -- Guru: Hanya bisa update pendaftaran miliknya
 DROP POLICY IF EXISTS "Guru bisa update pendaftaran miliknya" ON student_registrations;
 CREATE POLICY "Guru bisa update pendaftaran miliknya"
   ON student_registrations FOR UPDATE
+  TO authenticated
   USING (auth.uid() = guru_id);
 
 -- Guru: Hanya bisa delete pendaftaran miliknya
 DROP POLICY IF EXISTS "Guru bisa delete pendaftaran miliknya" ON student_registrations;
 CREATE POLICY "Guru bisa delete pendaftaran miliknya"
   ON student_registrations FOR DELETE
+  TO authenticated
   USING (auth.uid() = guru_id);
 
 -- 5. Enable Realtime untuk tabel student_registrations (Aman & Kondisional)

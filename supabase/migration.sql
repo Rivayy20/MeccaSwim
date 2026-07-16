@@ -98,9 +98,10 @@ ALTER TABLE attendances ENABLE ROW LEVEL SECURITY;
 -- 9. RLS Policies: profiles
 -- ============================================================
 DROP POLICY IF EXISTS "Guru bisa lihat profil sendiri" ON profiles;
-CREATE POLICY "Guru bisa lihat profil sendiri"
+DROP POLICY IF EXISTS "Publik bisa lihat profil guru" ON profiles;
+CREATE POLICY "Publik bisa lihat profil guru"
   ON profiles FOR SELECT
-  USING (auth.uid() = id);
+  USING (true);
 
 DROP POLICY IF EXISTS "Guru bisa update profil sendiri" ON profiles;
 CREATE POLICY "Guru bisa update profil sendiri"
@@ -357,4 +358,69 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_spp_payments_unique_harian
 ALTER TABLE classes 
   ADD COLUMN IF NOT EXISTS lokasi TEXT DEFAULT 'Semilir' 
   CHECK (lokasi IN ('Kolam Fatima Utama', 'Tirta Sambara', 'Tirta Rahayu', 'Semilir'));
+
+
+-- ============================================================
+-- 22. UPDATE V4.5: Student Registrations (Pendaftaran Murid Mandiri)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS student_registrations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  nama TEXT NOT NULL,
+  usia INTEGER,
+  jenis_kelamin TEXT CHECK (jenis_kelamin IN ('Laki-laki', 'Perempuan')),
+  lokasi TEXT NOT NULL CHECK (lokasi IN ('Kolam Fatima Utama', 'Tirta Sambara', 'Tirta Rahayu', 'Semilir')),
+  ortu_nama TEXT NOT NULL,
+  ortu_hp TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected')),
+  assigned_class_id UUID REFERENCES classes(id) ON DELETE SET NULL,
+  student_id UUID REFERENCES students(id) ON DELETE SET NULL,
+  guru_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_student_registrations_guru_id ON student_registrations(guru_id);
+CREATE INDEX IF NOT EXISTS idx_student_registrations_status ON student_registrations(status);
+CREATE INDEX IF NOT EXISTS idx_student_registrations_created_at ON student_registrations(created_at DESC);
+
+ALTER TABLE student_registrations ENABLE ROW LEVEL SECURITY;
+
+-- Policy untuk INSERT: Publik / Anon bisa mendaftar tanpa login
+DROP POLICY IF EXISTS "Publik bisa insert pendaftaran" ON student_registrations;
+CREATE POLICY "Publik bisa insert pendaftaran"
+  ON student_registrations FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+-- Policy untuk SELECT: Guru bisa melihat pendaftaran miliknya
+DROP POLICY IF EXISTS "Guru bisa lihat pendaftaran miliknya" ON student_registrations;
+CREATE POLICY "Guru bisa lihat pendaftaran miliknya"
+  ON student_registrations FOR SELECT
+  TO authenticated
+  USING (auth.uid() = guru_id);
+
+-- Policy untuk UPDATE: Guru bisa memperbarui status pendaftaran miliknya
+DROP POLICY IF EXISTS "Guru bisa update pendaftaran miliknya" ON student_registrations;
+CREATE POLICY "Guru bisa update pendaftaran miliknya"
+  ON student_registrations FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = guru_id);
+
+-- Policy untuk DELETE: Guru bisa menghapus pendaftaran miliknya
+DROP POLICY IF EXISTS "Guru bisa delete pendaftaran miliknya" ON student_registrations;
+CREATE POLICY "Guru bisa delete pendaftaran miliknya"
+  ON student_registrations FOR DELETE
+  TO authenticated
+  USING (auth.uid() = guru_id);
+
+-- Enable Realtime untuk tabel student_registrations
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'student_registrations'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE student_registrations;
+  END IF;
+END $$;
+
 
