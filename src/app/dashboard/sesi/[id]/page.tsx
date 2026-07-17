@@ -651,17 +651,15 @@ export default function ActiveSessionPage() {
                 <Clock className="h-4.5 w-4.5 text-amber-500" />
                 <span>Murid Belum Hadir ({absentStudents.length})</span>
               </CardTitle>
-              {!isSessionClosed && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleOpenRescheduleModal}
-                  leftIcon={<UserPlus className="h-3.5 w-3.5 text-purple-500" />}
-                  className="text-xs border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 font-bold self-stretch sm:self-auto"
-                >
-                  + Input Murid Kelas Lain (Reschedule)
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleOpenRescheduleModal}
+                leftIcon={<UserPlus className="h-3.5 w-3.5 text-purple-500" />}
+                className="text-xs border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 font-bold self-stretch sm:self-auto"
+              >
+                + Input Murid Kelas Lain (Reschedule)
+              </Button>
             </CardHeader>
             <CardContent className="p-0">
               {absentStudents.length === 0 ? (
