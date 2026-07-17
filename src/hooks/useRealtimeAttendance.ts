@@ -52,7 +52,7 @@ export function useRealtimeAttendance(sessionId: string, students: Student[] = [
           table: 'attendances',
           filter: `session_id=eq.${sessionId}`,
         },
-        (payload: AttendanceChangePayload) => {
+        async (payload: AttendanceChangePayload) => {
           if (!isMounted) return;
 
           if (payload.eventType === 'DELETE') {
@@ -62,8 +62,23 @@ export function useRealtimeAttendance(sessionId: string, students: Student[] = [
           }
 
           const changed = payload.new as Attendance;
-          const student = studentsRef.current.get(changed.student_id);
-          if (!student) return;
+          let student = studentsRef.current.get(changed.student_id);
+          if (!student) {
+            try {
+              const { data, error } = await supabase
+                .from('students')
+                .select('*')
+                .eq('id', changed.student_id)
+                .single();
+              if (!error && data) {
+                student = data as Student;
+                studentsRef.current.set(changed.student_id, student);
+              }
+            } catch (err) {
+              console.error('Failed dynamic student fetch in realtime:', err);
+            }
+          }
+          if (!student || !isMounted) return;
 
           const joined = { ...changed, students: student } as AttendanceWithStudent;
           setAttendances((current) => {
