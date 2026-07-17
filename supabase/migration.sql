@@ -13,8 +13,12 @@ CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   nama TEXT NOT NULL,
+  link_token TEXT UNIQUE DEFAULT encode(gen_random_bytes(4), 'hex'),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Untuk database yang sudah berjalan (menambahkan kolom link_token ke tabel profiles):
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS link_token TEXT UNIQUE;
 
 -- 3. Tabel: classes (data kelas)
 -- ============================================================

@@ -7,6 +7,7 @@ import * as authService from '@/services/auth.service';
 import { Profile } from '@/lib/types';
 import { AuthChangeEvent, Session as AuthSession, User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
+import { generateToken } from '@/lib/utils/token';
 
 function useAuthState() {
   const [user, setUser] = useState<User | null>(null);
@@ -21,7 +22,26 @@ function useAuthState() {
     async function loadProfile(userId: string) {
       const profileResult = await authService.getProfile(supabase, userId);
       if (profileResult.data && isMounted) {
-        setProfile(profileResult.data);
+        let prof = profileResult.data;
+        if (!prof.link_token) {
+          const shortToken = generateToken(6);
+          try {
+            const { data: updated } = await supabase
+              .from('profiles')
+              .update({ link_token: shortToken })
+              .eq('id', userId)
+              .select()
+              .single();
+            if (updated) {
+              prof = updated as Profile;
+            } else {
+              prof = { ...prof, link_token: shortToken };
+            }
+          } catch {
+            prof = { ...prof, link_token: shortToken };
+          }
+        }
+        setProfile(prof);
       }
     }
 

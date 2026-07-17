@@ -62,8 +62,8 @@ export default function GuruRegistrationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nama.trim() || !ortuNama.trim() || !ortuHp.trim() || !lokasi) {
-      toast.error('Mohon lengkapi seluruh kolom yang wajib diisi (*)');
+    if (!nama.trim() || !ortuNama.trim() || !ortuHp.trim() || !lokasi || !guru) {
+      toast.error('Mohon lengkapi seluruh kolom yang wajib diisi (*) atau pastikan data instruktur valid');
       return;
     }
 
@@ -77,7 +77,7 @@ export default function GuruRegistrationPage() {
       lokasi: lokasi,
       ortu_nama: ortuNama.trim(),
       ortu_hp: formattedHp,
-      guru_id: guruId,
+      guru_id: guru.id,
     });
 
     setSubmitting(false);

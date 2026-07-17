@@ -129,7 +129,7 @@ export function RegistrationConfirmModal({
     if (!confirmedStudent) return;
     const targetClass = classes.find((c) => c.id === selectedClassId);
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://meccaswim.com';
-    const portalUrl = `${origin}/portal/${confirmedStudent.link_token}`;
+    const portalUrl = `${origin}/murid/${confirmedStudent.link_token}`;
 
     const text = `Halo Bapak/Ibu ${registration.ortu_nama},
 

@@ -84,17 +84,24 @@ export async function getScanSessionData(
   try {
     const { data, error } = await supabase
       .from('sessions')
-      .select(`${SESSION_FIELDS}, classes(${CLASS_FIELDS}, students(id, nama, link_token))`)
+      .select(`${SESSION_FIELDS}, classes(${CLASS_FIELDS})`)
       .eq('qr_token', qrToken)
       .single();
 
     if (error || !data) return { data: null, error: error?.message || 'Sesi tidak ditemukan' };
 
-    const sessionData = data as unknown as SessionWithClass & { classes: SessionWithClass['classes'] & { students?: ScanSessionData['students'] } };
+    const sessionData = data as unknown as SessionWithClass;
+
+    const { data: allStudents } = await supabase
+      .from('students')
+      .select('id, nama, link_token, kelas_id, classes(nama)')
+      .eq('guru_id', sessionData.guru_id)
+      .order('nama', { ascending: true });
+
     return {
       data: {
         ...sessionData,
-        students: sessionData.classes?.students || [],
+        students: (allStudents || []) as unknown as ScanSessionData['students'],
       },
       error: null,
     };

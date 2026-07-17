@@ -14,6 +14,7 @@ export interface Profile {
   id: string;
   email: string;
   nama: string;
+  link_token?: string | null;
   created_at: string;
 }
 
@@ -90,7 +91,7 @@ export interface SessionWithClass extends Session {
 }
 
 export interface ScanSessionData extends SessionWithClass {
-  students: Pick<Student, 'id' | 'nama' | 'link_token'>[];
+  students: (Pick<Student, 'id' | 'nama' | 'link_token' | 'kelas_id'> & { classes?: Pick<Class, 'nama'> | null })[];
 }
 
 export interface SessionWithDetails extends Session {

@@ -3,6 +3,15 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/portal/:token',
+        destination: '/murid/:token',
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

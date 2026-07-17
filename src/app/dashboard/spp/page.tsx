@@ -28,6 +28,10 @@ const MONTHS = [
   { value: '12', label: 'Desember' },
 ];
 
+const NOMINAL_OPTIONS = [
+  50000, 100000, 150000, 200000, 250000, 300000, 350000, 400000, 500000, 750000, 1000000,
+];
+
 const formatRupiah = (value: string | number) => {
   if (value === undefined || value === null) return '';
   let cleanStr = value.toString().replace(/\D/g, '');
@@ -723,15 +727,42 @@ function SPPPageContent() {
       >
         <form onSubmit={handleSavePayment} className="space-y-4">
           <div className="space-y-4">
-            <Input
-              label="Nominal Pembayaran (Rp) *"
-              type="text"
-              value={payAmountText}
-              onChange={(e) => setPayAmountText(formatRupiah(e.target.value))}
-              placeholder="Contoh: 150.000"
-              required
-              className="bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-slate-100 border-border"
-            />
+            <div className="space-y-2">
+              <Input
+                label="Nominal Pembayaran (Rp) *"
+                type="text"
+                value={payAmountText}
+                onChange={(e) => setPayAmountText(formatRupiah(e.target.value))}
+                placeholder="Contoh: 150.000"
+                required
+                className="bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-slate-100 border-border"
+              />
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  Pilih Cepat Nominal (Rp):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {NOMINAL_OPTIONS.map((num) => {
+                    const formatted = formatRupiah(num);
+                    const isSelected = parseRupiah(payAmountText) === num;
+                    return (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setPayAmountText(formatted)}
+                        className={`px-2.5 py-1 text-xs font-extrabold rounded-lg border transition-all ${
+                          isSelected
+                            ? 'bg-primary-500 text-white border-primary-500 shadow-sm scale-105'
+                            : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-border hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/30'
+                        }`}
+                      >
+                        {formatted}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Status Pembayaran</label>
@@ -919,15 +950,42 @@ function SPPPageContent() {
             </div>
 
             {/* Nominal Tagihan */}
-            <Input
-              label="Nominal Tagihan (Rp) *"
-              type="text"
-              value={newAmountText}
-              onChange={(e) => setNewAmountText(formatRupiah(e.target.value))}
-              placeholder="Contoh: 150.000"
-              required
-              className="bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-slate-100 border-border"
-            />
+            <div className="space-y-2">
+              <Input
+                label="Nominal Tagihan (Rp) *"
+                type="text"
+                value={newAmountText}
+                onChange={(e) => setNewAmountText(formatRupiah(e.target.value))}
+                placeholder="Contoh: 150.000"
+                required
+                className="bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-slate-100 border-border"
+              />
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  Pilih Cepat Nominal (Rp):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {NOMINAL_OPTIONS.map((num) => {
+                    const formatted = formatRupiah(num);
+                    const isSelected = parseRupiah(newAmountText) === num;
+                    return (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setNewAmountText(formatted)}
+                        className={`px-2.5 py-1 text-xs font-extrabold rounded-lg border transition-all ${
+                          isSelected
+                            ? 'bg-primary-500 text-white border-primary-500 shadow-sm scale-105'
+                            : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-border hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/30'
+                        }`}
+                      >
+                        {formatted}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
             {/* Tipe Tagihan */}
             <div className="space-y-1.5">

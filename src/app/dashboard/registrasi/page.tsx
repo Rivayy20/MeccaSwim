@@ -11,6 +11,7 @@ import { RegistrationConfirmModal } from '@/components/forms/RegistrationConfirm
 import { Copy, Share2, CheckCircle2, Clock, Trash2, MapPin, Phone, User, ExternalLink, Sparkles, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatHariTanggal } from '@/lib/utils/date';
+import { generateToken } from '@/lib/utils/token';
 
 export default function RegistrasiDashboardPage() {
   const { user, profile } = useDashboardAuth();
@@ -66,8 +67,37 @@ export default function RegistrasiDashboardPage() {
     };
   }, [loadData, guruId, supabase]);
 
+  const [localShortToken, setLocalShortToken] = useState<string>('');
+
+  useEffect(() => {
+    async function ensureToken() {
+      if (profile?.link_token) {
+        setLocalShortToken(profile.link_token);
+      } else if (guruId) {
+        const { data } = await supabase.from('profiles').select('link_token').eq('id', guruId).single();
+        if (data?.link_token) {
+          setLocalShortToken(data.link_token);
+        } else {
+          const newToken = generateToken(6);
+          try {
+            const { data: updated } = await supabase.from('profiles').update({ link_token: newToken }).eq('id', guruId).select('link_token').single();
+            if (updated?.link_token) {
+              setLocalShortToken(updated.link_token);
+            } else {
+              setLocalShortToken(newToken);
+            }
+          } catch {
+            setLocalShortToken(newToken);
+          }
+        }
+      }
+    }
+    ensureToken();
+  }, [profile, guruId, supabase]);
+
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://meccaswim.com';
-  const myRegistrationUrl = guruId ? `${origin}/daftar/${guruId}` : '';
+  const shortOrLongId = localShortToken || profile?.link_token || guruId;
+  const myRegistrationUrl = shortOrLongId ? `${origin}/daftar/${shortOrLongId}` : '';
 
   const handleCopyLink = () => {
     if (!myRegistrationUrl) return;

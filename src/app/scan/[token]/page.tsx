@@ -11,7 +11,7 @@ import {
   LoadingSpinner,
   EmptyState,
 } from '@/components/ui';
-import { ScanSessionData, SessionWithClass, Student } from '@/lib/types';
+import { ScanSessionData } from '@/lib/types';
 import { CheckCircle2, AlertCircle, Calendar, Clock, UserCheck, ChevronRight, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatHariTanggal, formatWaktu } from '@/lib/utils/date';
@@ -24,12 +24,12 @@ export default function QRScanConfirmationPage() {
   const qrToken = params.token as string;
   
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<SessionWithClass | null>(null);
-  const [students, setStudents] = useState<Pick<Student, 'id' | 'nama' | 'link_token'>[]>([]);
+  const [session, setSession] = useState<ScanSessionData | null>(null);
+  const [students, setStudents] = useState<ScanSessionData['students']>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Selection states
-  const [selectedStudent, setSelectedStudent] = useState<Pick<Student, 'id' | 'nama' | 'link_token'> | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<ScanSessionData['students'][0] | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   
@@ -84,7 +84,7 @@ export default function QRScanConfirmationPage() {
     }
   }, [qrToken, loadSessionAndStudents]);
 
-  const handleSelectStudent = (student: Pick<Student, 'id' | 'nama' | 'link_token'>) => {
+  const handleSelectStudent = (student: ScanSessionData['students'][0]) => {
     setSelectedStudent(student);
     setIsConfirmOpen(true);
   };
@@ -226,7 +226,7 @@ export default function QRScanConfirmationPage() {
         </Card>
 
         {/* Student Checklist Selection */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
             Pilih Nama Anak Anda:
           </h4>
@@ -235,27 +235,72 @@ export default function QRScanConfirmationPage() {
             <EmptyState
               icon="Users"
               title="Tidak Ada Murid"
-              description="Tidak ada murid yang terdaftar di kelas ini."
+              description="Tidak ada murid aktif terdaftar di bawah pelatih ini."
             />
           ) : (
-            <div className="space-y-2.5 max-h-[40vh] overflow-y-auto pr-1">
-              {students.map((student) => (
-                <div
-                  key={student.id}
-                  onClick={() => handleSelectStudent(student)}
-                  className="p-3.5 sm:p-4 rounded-xl border border-white/10 hover:border-primary-400 bg-slate-800/40 hover:bg-slate-800/80 transition-all flex items-center justify-between gap-4 cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-cyan-950/40 border border-cyan-800 text-cyan-400 rounded-lg group-hover:scale-105 transition-transform">
-                      <UserCheck className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-bold text-white group-hover:text-cyan-200 transition-colors">
-                      {student.nama}
-                    </span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-primary-400 transition-colors" />
+            <div className="space-y-4 max-h-[45vh] overflow-y-auto pr-1">
+              {/* Group 1: Murid Kelas Ini */}
+              <div className="space-y-2">
+                <span className="text-[11px] font-extrabold text-cyan-400 block px-1">
+                  🏊 Murid Kelas Ini ({session?.classes?.nama || 'Reguler'})
+                </span>
+                {students.filter((s) => s.kelas_id === session?.kelas_id).length === 0 ? (
+                  <p className="text-xs text-slate-500 italic px-1">Tidak ada murid reguler di kelas ini.</p>
+                ) : (
+                  students
+                    .filter((s) => s.kelas_id === session?.kelas_id)
+                    .map((student) => (
+                      <div
+                        key={student.id}
+                        onClick={() => handleSelectStudent(student)}
+                        className="p-3.5 sm:p-4 rounded-xl border border-white/10 hover:border-primary-400 bg-slate-800/40 hover:bg-slate-800/80 transition-all flex items-center justify-between gap-4 cursor-pointer group mb-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-cyan-950/40 border border-cyan-800 text-cyan-400 rounded-lg group-hover:scale-105 transition-transform">
+                            <UserCheck className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-bold text-white group-hover:text-cyan-200 transition-colors">
+                            {student.nama}
+                          </span>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-primary-400 transition-colors" />
+                      </div>
+                    ))
+                )}
+              </div>
+
+              {/* Group 2: Murid Kelas Lain (Reschedule) */}
+              {students.filter((s) => s.kelas_id !== session?.kelas_id).length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-white/10">
+                  <span className="text-[11px] font-extrabold text-purple-400 block px-1 flex items-center justify-between">
+                    <span>🔄 Murid Kelas Lain (Reschedule / Pindah Jadwal)</span>
+                  </span>
+                  {students
+                    .filter((s) => s.kelas_id !== session?.kelas_id)
+                    .map((student) => (
+                      <div
+                        key={student.id}
+                        onClick={() => handleSelectStudent(student)}
+                        className="p-3.5 sm:p-4 rounded-xl border border-purple-500/20 hover:border-purple-400 bg-purple-950/20 hover:bg-purple-900/40 transition-all flex items-center justify-between gap-4 cursor-pointer group mb-2"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2 bg-purple-950/60 border border-purple-800 text-purple-400 rounded-lg group-hover:scale-105 transition-transform shrink-0">
+                            <UserCheck className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-sm font-bold text-white group-hover:text-purple-200 transition-colors block truncate">
+                              {student.nama}
+                            </span>
+                            <span className="text-[10px] text-purple-300 font-semibold block mt-0.5">
+                              Kelas Asal: {student.classes?.nama || 'Kelas Lain'}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-purple-400 group-hover:text-purple-300 transition-colors shrink-0" />
+                      </div>
+                    ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
@@ -276,10 +321,20 @@ export default function QRScanConfirmationPage() {
               {selectedStudent?.nama}
             </p>
             <p className="text-xs font-semibold text-primary-500 mt-2">
-              Pada kelas {session?.classes?.nama} hari ini.
+              Pada sesi {session?.classes?.nama} hari ini.
             </p>
+            {selectedStudent?.kelas_id !== session?.kelas_id && (
+              <div className="mt-3 p-2.5 rounded-lg bg-purple-100 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-bold text-left space-y-1">
+                <p className="flex items-center gap-1.5 font-extrabold text-[11px]">
+                  <span>🔄 Presensi Reschedule (Pindah Jadwal)</span>
+                </p>
+                <p className="text-[10px] font-medium leading-relaxed">
+                  Murid berasal dari <b>{selectedStudent?.classes?.nama || 'Kelas Lain'}</b>. Kehadiran akan dicatat otomatis dengan keterangan reschedule.
+                </p>
+              </div>
+            )}
             {session?.classes?.lokasi && (
-              <p className="text-[10px] text-primary-600 dark:text-primary-400 font-extrabold flex items-center justify-center gap-1 mt-1">
+              <p className="text-[10px] text-primary-600 dark:text-primary-400 font-extrabold flex items-center justify-center gap-1 mt-2">
                 <MapPin className="h-3.5 w-3.5 text-primary-500 shrink-0" />
                 Lokasi: {session.classes.lokasi}
               </p>

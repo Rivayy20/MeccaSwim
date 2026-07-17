@@ -216,20 +216,40 @@ export async function deleteRegistration(
 }
 
 /**
- * Mengambil profil guru berdasarkan ID (untuk halaman publik pendaftaran)
+ * Mengambil profil guru berdasarkan ID atau link_token (untuk halaman publik pendaftaran)
  */
 export async function getGuruProfileById(
   supabase: SupabaseClient,
-  guruId: string
+  guruIdOrToken: string
 ): Promise<ServiceResult<Profile>> {
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', guruId)
-      .single();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(guruIdOrToken);
 
-    if (error) return { data: null, error: error.message };
+    let query = supabase.from('profiles').select('*');
+    if (isUuid) {
+      query = query.or(`id.eq.${guruIdOrToken},link_token.eq.${guruIdOrToken}`);
+    } else {
+      query = query.eq('link_token', guruIdOrToken);
+    }
+
+    const { data, error } = await query.single();
+
+    if (error || !data) {
+      if (isUuid) {
+        // Fallback untuk instalasi DB di mana kolom link_token belum di-alter
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', guruIdOrToken)
+          .single();
+        if (fallbackError || !fallbackData) {
+          return { data: null, error: fallbackError?.message || 'Instruktur tidak ditemukan' };
+        }
+        return { data: fallbackData as Profile, error: null };
+      }
+      return { data: null, error: error?.message || 'Instruktur tidak ditemukan' };
+    }
+
     return { data: data as Profile, error: null };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Instruktur tidak ditemukan';

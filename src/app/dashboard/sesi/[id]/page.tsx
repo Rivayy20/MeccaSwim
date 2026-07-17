@@ -26,8 +26,8 @@ import {
 import { AttendanceForm } from '@/components/forms';
 import { createClient } from '@/lib/supabase/client';
 import { getSessionById } from '@/services/session.service';
-import { getStudentsByClassId } from '@/services/student.service';
-import { SessionWithClass, Student, AttendanceStatus, AttendanceWithStudent } from '@/lib/types';
+import { getStudentsByClassId, getStudents } from '@/services/student.service';
+import { SessionWithClass, Student, StudentWithClass, AttendanceStatus, AttendanceWithStudent } from '@/lib/types';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   RefreshCw,
@@ -76,6 +76,14 @@ export default function ActiveSessionPage() {
   // Close Session Confirm States
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [closeLoading, setCloseLoading] = useState(false);
+
+  // Reschedule Attendance Modal States
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+  const [allCoachStudents, setAllCoachStudents] = useState<StudentWithClass[]>([]);
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
+  const [selectedRescheduleStudent, setSelectedRescheduleStudent] = useState<StudentWithClass | null>(null);
+  const [rescheduleStatus, setRescheduleStatus] = useState<AttendanceStatus>('hadir');
+  const [rescheduleNote, setRescheduleNote] = useState('');
 
   const supabase = createClient();
 
@@ -369,6 +377,47 @@ export default function ActiveSessionPage() {
     }
   };
 
+  const handleOpenRescheduleModal = async () => {
+    if (!session?.guru_id) return;
+    setIsRescheduleModalOpen(true);
+    setRescheduleLoading(true);
+    try {
+      const res = await getStudents(supabase, session.guru_id);
+      if (res.data) {
+        const available = res.data.filter(s => s.kelas_id !== session.kelas_id && !presentStudents.some(p => p.student_id === s.id));
+        setAllCoachStudents(available);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal memuat daftar murid kelas lain');
+    } finally {
+      setRescheduleLoading(false);
+    }
+  };
+
+  const handleRecordReschedule = async () => {
+    if (!selectedRescheduleStudent || !sessionId) return;
+    setManualLoading(true);
+    try {
+      const originClassName = selectedRescheduleStudent.classes?.nama || 'Kelas Lain';
+      const defaultNote = rescheduleNote || `Reschedule dari ${originClassName}`;
+      await recordAttendance({
+        session_id: sessionId,
+        student_id: selectedRescheduleStudent.id,
+        status: rescheduleStatus,
+        metode: 'manual',
+        catatan: defaultNote,
+      });
+      setIsRescheduleModalOpen(false);
+      setSelectedRescheduleStudent(null);
+      setRescheduleNote('');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setManualLoading(false);
+    }
+  };
+
   if (loading || !session) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
@@ -568,7 +617,16 @@ export default function ActiveSessionPage() {
                   <TableBody>
                     {presentStudents.map((att) => (
                       <TableRow key={att.id}>
-                        <TableCell className="font-bold">{att.students?.nama}</TableCell>
+                        <TableCell className="font-bold">
+                          <div>
+                            <span>{att.students?.nama}</span>
+                            {(att.students?.kelas_id !== session?.kelas_id || (att.catatan && att.catatan.toLowerCase().includes('reschedule'))) && (
+                              <span className="inline-flex items-center gap-1 text-[10px] bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 px-1.5 py-0.5 rounded font-extrabold mt-1 block w-fit">
+                                🔄 Reschedule{att.catatan && att.catatan.includes('Reschedule dari') ? ` (${att.catatan.replace('Reschedule dari ', '')})` : ''}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{formatWaktu(att.waktu_scan)}</TableCell>
                         <TableCell>
                           <Badge variant={att.metode === 'qr' ? 'primary' : 'secondary'} showDot={false}>
@@ -588,11 +646,22 @@ export default function ActiveSessionPage() {
 
           {/* Not Attended list */}
           <Card className="border border-border">
-            <CardHeader className="pb-2 border-b border-border">
+            <CardHeader className="pb-3 border-b border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <Clock className="h-4.5 w-4.5 text-amber-500" />
-                Murid Belum Hadir ({absentStudents.length})
+                <span>Murid Belum Hadir ({absentStudents.length})</span>
               </CardTitle>
+              {!isSessionClosed && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleOpenRescheduleModal}
+                  leftIcon={<UserPlus className="h-3.5 w-3.5 text-purple-500" />}
+                  className="text-xs border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 font-bold self-stretch sm:self-auto"
+                >
+                  + Input Murid Kelas Lain (Reschedule)
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="p-0">
               {absentStudents.length === 0 ? (
@@ -669,6 +738,127 @@ export default function ActiveSessionPage() {
               isLoading={closeLoading}
             >
               Tutup Sesi
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Reschedule Attendance Modal */}
+      <Modal
+        isOpen={isRescheduleModalOpen}
+        onClose={() => setIsRescheduleModalOpen(false)}
+        title="Input Presensi Lintas Jadwal (Reschedule)"
+      >
+        <div className="space-y-4 animate-scale-in">
+          <p className="text-xs text-muted-foreground font-semibold">
+            Pilih murid dari kelas lain yang hadir di sesi ini karena pindah jadwal / reschedule:
+          </p>
+
+          {rescheduleLoading ? (
+            <div className="py-6 flex justify-center">
+              <LoadingSpinner text="Memuat daftar murid kelas lain..." />
+            </div>
+          ) : allCoachStudents.length === 0 ? (
+            <EmptyState
+              icon="Users"
+              title="Tidak Ada Murid Lain"
+              description="Semua murid dari kelas lain sudah tercatat hadir atau belum ada murid di kelas lain."
+            />
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-1">
+                  Pilih Murid <span className="text-red-500">*</span>
+                </label>
+                <select
+                  className="w-full text-sm rounded-xl border border-border bg-card p-2.5 font-bold text-foreground focus:ring-2 focus:ring-primary-500"
+                  value={selectedRescheduleStudent?.id || ''}
+                  onChange={(e) => {
+                    const found = allCoachStudents.find((s) => s.id === e.target.value) || null;
+                    setSelectedRescheduleStudent(found);
+                    if (found) {
+                      setRescheduleNote(`Reschedule dari ${found.classes?.nama || 'Kelas Lain'}`);
+                    }
+                  }}
+                >
+                  <option value="">-- Pilih Murid --</option>
+                  {allCoachStudents.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nama} ({s.classes?.nama || 'Tanpa Kelas'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedRescheduleStudent && (
+                <>
+                  <div className="p-3 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl space-y-1">
+                    <p className="text-[11px] font-extrabold text-purple-700 dark:text-purple-300">
+                      Kelas Asal: {selectedRescheduleStudent.classes?.nama || 'Tanpa Kelas'}
+                    </p>
+                    <p className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">
+                      Usia: {selectedRescheduleStudent.usia ? `${selectedRescheduleStudent.usia} tahun` : '-'} | {selectedRescheduleStudent.jenis_kelamin || '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-foreground mb-1">Status Kehadiran</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['hadir', 'izin', 'sakit'] as AttendanceStatus[]).map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => setRescheduleStatus(status)}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold capitalize transition-all border ${
+                            rescheduleStatus === status
+                              ? status === 'hadir'
+                                ? 'bg-emerald-500 text-white border-emerald-500 shadow-md'
+                                : status === 'izin'
+                                ? 'bg-amber-500 text-white border-amber-500 shadow-md'
+                                : 'bg-orange-500 text-white border-orange-500 shadow-md'
+                              : 'bg-card text-muted-foreground border-border hover:border-primary-400'
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-foreground mb-1">Catatan Reschedule</label>
+                    <input
+                      type="text"
+                      className="w-full text-sm rounded-xl border border-border bg-card p-2.5 text-foreground focus:ring-2 focus:ring-primary-500"
+                      placeholder="Contoh: Reschedule dari Kelas Rabu"
+                      value={rescheduleNote}
+                      onChange={(e) => setRescheduleNote(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsRescheduleModalOpen(false);
+                setSelectedRescheduleStudent(null);
+              }}
+              disabled={manualLoading}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleRecordReschedule}
+              isLoading={manualLoading}
+              disabled={!selectedRescheduleStudent || manualLoading}
+            >
+              Simpan Presensi Reschedule
             </Button>
           </div>
         </div>

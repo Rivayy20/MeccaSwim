@@ -16,6 +16,8 @@ export interface QRAttendanceResult extends Attendance {
     class_name: string;
     link_token: string;
   };
+  is_reschedule?: boolean;
+  origin_class?: string;
 }
 
 export async function getAttendancesBySession(
@@ -130,7 +132,7 @@ export async function confirmQRAttendance(
   try {
     const { data: session, error: sessionError } = await supabase
       .from('sessions')
-      .select('id, kelas_id, qr_expires_at, status')
+      .select('id, kelas_id, qr_expires_at, status, guru_id')
       .eq('qr_token', qrToken)
       .single();
 
@@ -149,14 +151,19 @@ export async function confirmQRAttendance(
 
     const { data: student } = await supabase
       .from('students')
-      .select('id, nama, ortu_hp, link_token, classes(nama)')
+      .select('id, nama, ortu_hp, link_token, kelas_id, guru_id, classes(nama)')
       .eq('id', studentId)
-      .eq('kelas_id', session.kelas_id)
+      .eq('guru_id', session.guru_id)
       .maybeSingle();
 
     if (!student) {
-      return { data: null, error: 'Murid tidak terdaftar pada kelas sesi ini.' };
+      return { data: null, error: 'Murid tidak terdaftar pada pelatih sesi ini.' };
     }
+
+    const studentData = student as unknown as { nama: string; ortu_hp: string | null; link_token: string; kelas_id: string | null; classes: { nama: string } | null };
+    const isReschedule = studentData.kelas_id !== session.kelas_id;
+    const originClassName = studentData.classes?.nama || 'Kelas Lain';
+    const catatan = isReschedule ? `Reschedule dari ${originClassName}` : null;
 
     const { data: attendance, error: insertError } = await supabase
       .from('attendances')
@@ -165,6 +172,7 @@ export async function confirmQRAttendance(
         student_id: studentId,
         status: 'hadir',
         metode: 'qr',
+        catatan,
         waktu_scan: new Date().toISOString(),
       })
       .select()
@@ -177,7 +185,6 @@ export async function confirmQRAttendance(
       return { data: null, error: insertError.message };
     }
 
-    const studentData = student as unknown as { nama: string; ortu_hp: string | null; link_token: string; classes: { nama: string } | null };
     return {
       data: {
         ...(attendance as Attendance),
@@ -187,6 +194,8 @@ export async function confirmQRAttendance(
           class_name: studentData.classes?.nama || 'Kelas Renang',
           link_token: studentData.link_token,
         },
+        is_reschedule: isReschedule,
+        origin_class: isReschedule ? originClassName : undefined,
       },
       error: null,
     };
@@ -253,14 +262,6 @@ export async function getMonthlyRecap(
   kelasId?: string
 ): Promise<ServiceResult<MonthlyRecapResult[]>> {
   try {
-    // 1. Fetch students
-    let studentsQuery = supabase.from('students').select('*, classes(*)').eq('guru_id', guruId);
-    if (kelasId) {
-      studentsQuery = studentsQuery.eq('kelas_id', kelasId);
-    }
-    const { data: students, error: studentsError } = await studentsQuery;
-    if (studentsError) return { data: null, error: studentsError.message };
-
     const start = `${year}-${String(month).padStart(2, '0')}-01`;
     const nextMonth = month === 12
       ? `${year + 1}-01-01`
@@ -281,11 +282,18 @@ export async function getMonthlyRecap(
     const { data: sessions, error: sessionsError } = await sessionsQuery;
     if (sessionsError) return { data: null, error: sessionsError.message };
 
-    const filteredSessions = sessions;
+    const filteredSessions = sessions || [];
 
     if (filteredSessions.length === 0) {
+      let studentsQuery = supabase.from('students').select('*, classes(*)').eq('guru_id', guruId);
+      if (kelasId) {
+        studentsQuery = studentsQuery.eq('kelas_id', kelasId);
+      }
+      const { data: students, error: studentsError } = await studentsQuery;
+      if (studentsError) return { data: null, error: studentsError.message };
+
       return {
-        data: students.map((std) => ({
+        data: (students || []).map((std) => ({
           student: std,
           summary: { hadir: 0, izin: 0, sakit: 0, alpha: 0, rate: 0 },
           attendances: {},
@@ -296,7 +304,6 @@ export async function getMonthlyRecap(
 
     const sessionIds = filteredSessions.map((s) => s.id);
 
-    // 3. Fetch all attendances for these sessions
     const { data: attendances, error: attendancesError } = await supabase
       .from('attendances')
       .select('*')
@@ -305,10 +312,23 @@ export async function getMonthlyRecap(
     if (attendancesError) return { data: null, error: attendancesError.message };
 
     const attendanceMap = new Map(
-      attendances.map((attendance) => [`${attendance.session_id}:${attendance.student_id}`, attendance])
+      (attendances || []).map((attendance) => [`${attendance.session_id}:${attendance.student_id}`, attendance])
     );
 
-    const result = students.map((std) => {
+    const attendedStudentIds = Array.from(new Set((attendances || []).map((a) => a.student_id)));
+
+    let studentsQuery = supabase.from('students').select('*, classes(*)').eq('guru_id', guruId);
+    if (kelasId) {
+      if (attendedStudentIds.length > 0) {
+        studentsQuery = studentsQuery.or(`kelas_id.eq.${kelasId},id.in.(${attendedStudentIds.join(',')})`);
+      } else {
+        studentsQuery = studentsQuery.eq('kelas_id', kelasId);
+      }
+    }
+    const { data: students, error: studentsError } = await studentsQuery;
+    if (studentsError) return { data: null, error: studentsError.message };
+
+    const result = (students || []).map((std) => {
       const stdAttendances: Record<string, Attendance> = {};
       const stats = { hadir: 0, izin: 0, sakit: 0, alpha: 0 };
 
@@ -318,8 +338,6 @@ export async function getMonthlyRecap(
           stdAttendances[sess.id] = att;
           stats[att.status as keyof typeof stats]++;
         } else {
-          // If no record exists, default to alpha (absent) or mark as '-' if session doesn't belong to their class.
-          // In Mecca Swim, sessions are per-class, so if the student is in that class, we can treat missing as alpha.
           if (std.kelas_id === sess.kelas_id) {
             stats.alpha++;
           }
@@ -329,7 +347,7 @@ export async function getMonthlyRecap(
       const totalActiveSessionsForStudent = filteredSessions.filter(s => s.kelas_id === std.kelas_id).length;
       const rate = totalActiveSessionsForStudent > 0 
         ? Math.round((stats.hadir / totalActiveSessionsForStudent) * 100)
-        : 0;
+        : (stats.hadir > 0 ? 100 : 0);
 
       return {
         student: std,
@@ -337,7 +355,7 @@ export async function getMonthlyRecap(
           ...stats,
           rate,
         },
-        attendances: stdAttendances, // keyed by session_id
+        attendances: stdAttendances,
       };
     });
 
